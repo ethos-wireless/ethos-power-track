@@ -1,0 +1,3 @@
+/home/aerial/ethos-measure/ETHOS-power/build/CMakeFiles/ETHOS-power.dir
+/home/aerial/ethos-measure/ETHOS-power/build/CMakeFiles/edit_cache.dir
+/home/aerial/ethos-measure/ETHOS-power/build/CMakeFiles/rebuild_cache.dir

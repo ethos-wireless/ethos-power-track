@@ -1,0 +1,1 @@
+/usr/bin/c++ -std=c++17 -Wall -Wextra -march=native CMakeFiles/PMDLogger.dir/main.cpp.o CMakeFiles/PMDLogger.dir/src/CpuTracker.cpp.o CMakeFiles/PMDLogger.dir/src/GpuTracker.cpp.o CMakeFiles/PMDLogger.dir/src/Tracker.cpp.o CMakeFiles/PMDLogger.dir/src/TrackerScheduler.cpp.o -o PMDLogger  -L$(NVML_LIB) -lnvidia-ml 
