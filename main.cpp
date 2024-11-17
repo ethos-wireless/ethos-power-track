@@ -9,10 +9,12 @@ int main() {
     // Run the measurement function in a separate thread
     std::chrono::duration<uint64_t,std::milli> cpu_measure_interval = std::chrono::milliseconds(1);
     std::chrono::duration<uint64_t,std::milli> gpu_measure_interval = std::chrono::milliseconds(10);
+    std::chrono::duration<uint64_t,std::milli> ru_measure_interval = std::chrono::milliseconds(1);
     std::chrono::duration<uint64_t,std::milli> print_interval = std::chrono::milliseconds(1);
 
     std::thread cpu_power_thread(&TrackerScheduler::MeasureCpuPower,&track_scheduler,cpu_measure_interval);
     std::thread gpu_power_thread(&TrackerScheduler::MeasureGpuPower,&track_scheduler,gpu_measure_interval);
+    std::thread ru_power_thread(&TrackerScheduler::MeasureRuPower,&track_scheduler,ru_measure_interval);
     std::thread print_thread(&TrackerScheduler::PeriodicalPrintResults,&track_scheduler,print_interval);
     
     // Allow the measurement to run for 10 seconds
@@ -25,6 +27,7 @@ int main() {
     // power_thread.join();
     cpu_power_thread.join();
     gpu_power_thread.join();
+    ru_power_thread.join();
     print_thread.join();
 
     std::cout << "Measurement completed." << std::endl;
