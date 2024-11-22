@@ -39,6 +39,8 @@ public:
   PmdTracker(uint32_t ID, std::string path, std::string port, size_t speed);
   virtual ~PmdTracker() override;
 
+  void PmdConfigRetryFindDevice(std::vector<uint8_t>& rxDataBinary);
+  void PmdConfigReopenPort();
   void PmdConfigTxStart();
   void PmdConfigTxStop();
   std::vector<float> GetPmdPower();
@@ -73,7 +75,7 @@ private:
   bool dev_attached_; 
 
   SerialPort serial_port_;
-  size_t id_;
+  size_t pmd_id_;
 
   std::vector<uint8_t> rx_buffer_;
 

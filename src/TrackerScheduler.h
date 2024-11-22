@@ -34,8 +34,6 @@ class TrackerScheduler {
 public:
     TrackerScheduler();
     virtual ~TrackerScheduler();
-
-    void PrintMeasuredPower(std::chrono::duration<uint64_t,std::milli> interval);
     
     void MeasureCpuPower(std::chrono::duration<uint64_t,std::milli> interval);
     void MeasureGpuPower(std::chrono::duration<uint64_t,std::milli> interval);
