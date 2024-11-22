@@ -2,23 +2,25 @@
 
 
 int main() {
-    std::cout << "Starting power measurement at 1ms intervals..." << std::endl;
+    std::cout << "Starting ETHOS-power measurement ..." << std::endl;
 
     TrackerScheduler track_scheduler;
+    // Wait a bit for the init process
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // Run the measurement function in a separate thread
+    // Measurement threads
     std::chrono::duration<uint64_t,std::milli> cpu_measure_interval = std::chrono::milliseconds(1);
     std::chrono::duration<uint64_t,std::milli> gpu_measure_interval = std::chrono::milliseconds(10);
-    std::chrono::duration<uint64_t,std::milli> ru_measure_interval = std::chrono::milliseconds(1);
+    std::chrono::duration<uint64_t,std::milli> ru_measure_interval = std::chrono::milliseconds(10);
     std::chrono::duration<uint64_t,std::milli> print_interval = std::chrono::milliseconds(1);
 
     std::thread cpu_power_thread(&TrackerScheduler::MeasureCpuPower,&track_scheduler,cpu_measure_interval);
     std::thread gpu_power_thread(&TrackerScheduler::MeasureGpuPower,&track_scheduler,gpu_measure_interval);
     std::thread ru_power_thread(&TrackerScheduler::MeasureRuPower,&track_scheduler,ru_measure_interval);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     std::thread print_thread(&TrackerScheduler::PeriodicalPrintResults,&track_scheduler,print_interval);
     
-    // Allow the measurement to run for 10 seconds
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(4));
     
     // Stop the measurement
     track_scheduler.Disable();

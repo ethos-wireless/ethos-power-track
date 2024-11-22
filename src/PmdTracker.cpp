@@ -14,7 +14,7 @@ PmdTracker::PmdTracker(uint32_t ID, std::string path, std::string port, size_t s
 
     serial_port_.SetTimeout(100); 
 
-    std::cout << "Opening " << port_ << " at "<< speed << " baud, 8n1..." << std::flush;
+    std::cout << "Opening " << port_ << " at "<< speed_ << " baud, 8n1..." << std::flush;
     serial_port_.Open();
     std::cout << "OK." << std::endl;
 
@@ -30,6 +30,7 @@ PmdTracker::PmdTracker(uint32_t ID, std::string path, std::string port, size_t s
 
     std::cout << "Reading CMD_READ_ID response..." << std::flush;
     std::vector<uint8_t> rxDataBinary;
+    rxDataBinary.clear();
     auto t_start = std::chrono::high_resolution_clock::now();
     while(rxDataBinary.size() < 3) {
         serial_port_.ReadBinary(rxDataBinary);
@@ -45,10 +46,15 @@ PmdTracker::PmdTracker(uint32_t ID, std::string path, std::string port, size_t s
         std::cout << "No PMD Device Found!" << std::endl;
         dev_attached_ = false;
     }
+    else {
+        dev_attached_ = true;
+    }
+
+    PmdConfigRetryFindDevice(rxDataBinary);
 
     if (dev_attached_ == true) {
-        id_ =unsigned(rxDataBinary.at(2)); 
-        std::cout << "PMD Device (#" << id_ << ") Found!" << std::endl;
+        pmd_id_ =unsigned(rxDataBinary.at(2)); 
+        std::cout << "PMD Device (#" << pmd_id_ << ") Found!" << std::endl;
     }
     rxDataBinary.clear();
     
@@ -56,16 +62,41 @@ PmdTracker::PmdTracker(uint32_t ID, std::string path, std::string port, size_t s
 }
 
 PmdTracker::~PmdTracker() {
+    PmdConfigTxStop();
     serial_port_.Close();
     dev_attached_ = false;
-    PmdConfigTxStop();
+}
+
+void PmdTracker::PmdConfigRetryFindDevice(std::vector<uint8_t>& rxDataBinary) {
+    while (!dev_attached_){
+        std::cout << "Reading CMD_READ_ID response..." << std::flush;
+        rxDataBinary.clear();
+        auto t_start = std::chrono::high_resolution_clock::now();
+        while(rxDataBinary.size() < 3) {
+            serial_port_.ReadBinary(rxDataBinary);
+            auto t_now = std::chrono::high_resolution_clock::now();
+            double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_now - t_start).count();
+            if (elapsed_time_ms >= RX_TIMEOUT_MS) {
+                std::cout << "ERROR: Did not receive enough binary data (" << rxDataBinary.size() << ") from PMD-USB." << std::endl;
+                dev_attached_ = false;
+            }
+        }
+        std:: cout << "OK." << std::endl;
+        if (rxDataBinary.size() != 3 || rxDataBinary.at(0) != PMD_USB_VID || rxDataBinary.at(1) != PMD_USB_PID) {
+            std::cout << "No PMD Device Found!" << std::endl;
+            dev_attached_ = false;
+        }
+        else {
+            dev_attached_ = true;
+        }
+    }
 }
 
 void PmdTracker::PmdConfigTxStart() {
     std::cout << "Writing CMD_WRITE_CONFIG_CONT_TX command..." << std::flush;
     std::vector<uint8_t> cont_start_cmd{ UART_CMD::UART_CMD_WRITE_CONFIG_CONT_TX, 1, 0, 0xFF};
     serial_port_.WriteBinary(cont_start_cmd);
-    std:: cout << "Writing Done." << std::endl;
+    std:: cout << "OK." << std::endl;
 }
 void PmdTracker::PmdConfigTxStop() {
     std::cout << "Stopping CONT_TX command..." << std::flush;
@@ -75,7 +106,7 @@ void PmdTracker::PmdConfigTxStop() {
 }
 
 std::vector<float> PmdTracker::GetPmdPower(){
-    std::vector<float> pmd_power_vec;
+    std::vector<float> pmd_power_vec = {static_cast<float>(-1),static_cast<float>(-1),static_cast<float>(-1)};
     if (dev_attached_) {
         auto t_start = std::chrono::high_resolution_clock::now();
         while(rx_buffer_.size() < 16) {
@@ -88,7 +119,9 @@ std::vector<float> PmdTracker::GetPmdPower(){
             }
         }
         if (rx_buffer_.size() %  16 != 0) {
-          std::cout << "Did not read enough data (" << rx_buffer_.size() << "/16)! Closing port..." << std::endl;
+          std::cout << "Did not read enough data (" << rx_buffer_.size() << "/16)! Skip this power read ..." << std::endl;
+          rx_buffer_.clear();
+          return pmd_power_vec;
         } 
  	
         size_t num_sets = rx_buffer_.size() / 16;
@@ -107,12 +140,16 @@ std::vector<float> PmdTracker::GetPmdPower(){
             double eps2_p = eps2_v * eps2_i;
             // double gpu_power = pcie1_p + pcie2_p;
             // double cpu_power = eps1_p + eps2_p;
-            std::cout << "RU power: " << pcie1_p << " NIC power: " << eps1_p << " GPU power: " << eps2_p << std::endl;
+            // std::cout << "RU power: " << pcie1_p << " NIC power: " << eps1_p << " GPU power: " << eps2_p << std::endl;
             pmd_power_vec = {static_cast<float>(pcie1_p),static_cast<float>(eps1_p),static_cast<float>(eps2_p)};
-	}
+	    }
 	rx_buffer_.clear();
     }
+    else {
+        std::cout << "RU power not read" << std::endl;
+    }
     // format: RU power, NIC power, GPU power
+    rx_buffer_.clear();
     return pmd_power_vec;
 }
 

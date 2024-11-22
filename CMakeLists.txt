@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(SET CMP0048 NEW)
 project(ETHOS-power VERSION 0.0.1)
 
-# find_package(CppLinuxSerial)
-# if (NOT CppLinuxSerial_FOUND)
-# 	message(FATAL_ERROR "CppLinuxSerial library not found")
-# endif()
+find_package(CppLinuxSerial)
+if (NOT CppLinuxSerial_FOUND)
+	message(FATAL_ERROR "CppLinuxSerial library not found")
+endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
   message(STATUS "Using GNU compiler, compiler ID ${CMAKE_C_COMPILER_ID}")
@@ -25,8 +25,7 @@ set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(NVML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/cuda-12.2")
 
-# Collect all .cpp and .h files in the src directory and add main.cpp,
-# excluding files in include/CppLinuxSerial and GpuTracker.cpp
+# Collect all .cpp and .h files in the current, src, and include directory
 file(GLOB_RECURSE SRC_FILES 
     "${SRC_DIR}/*.cpp" 
     "${SRC_DIR}/*.h" 
@@ -34,17 +33,12 @@ file(GLOB_RECURSE SRC_FILES
     "${INCLUDE_DIR}/*.h"
     "${INCLUDE_DIR}/*.cpp"
 )
-# list(FILTER SRC_FILES EXCLUDE REGEX ".*CppLinuxSerial/.*")
-# list(FILTER SRC_FILES EXCLUDE REGEX ".*/GpuTracker.h")  # Exclude GpuTracker.cpp from main sources
 
-# Add the main executable target excluding GpuTracker.cpp
+# Add the main executable as <PROJECT_NAME>
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
-# Include directories, adding src for main.cpp and excluding CppLinuxSerial
+# Include the directories for main.cpp
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR} ${NVML_INCLUDE_DIR} ${SRC_DIR})
-
-# Add GpuTracker.cpp as a separate target object library
-# add_library(GpuTrackerObj OBJECT ${SRC_DIR}/GpuTracker.h)
 
 set(NVML_LIB "/usr/lib32/libnvidia-ml.so")
 
